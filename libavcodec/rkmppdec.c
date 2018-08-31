@@ -39,7 +39,7 @@
 #include "libavutil/log.h"
 
 #define RECEIVE_FRAME_TIMEOUT   100
-#define FRAMEGROUP_MAX_FRAMES   16
+#define FRAMEGROUP_MAX_FRAMES   24
 #define INPUT_MAX_PACKETS       4
 
 typedef struct {
