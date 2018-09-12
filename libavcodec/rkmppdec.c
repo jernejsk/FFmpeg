@@ -70,6 +70,7 @@ static MppCodingType rkmpp_get_codingtype(AVCodecContext *avctx)
     switch (avctx->codec_id) {
     case AV_CODEC_ID_H264:          return MPP_VIDEO_CodingAVC;
     case AV_CODEC_ID_HEVC:          return MPP_VIDEO_CodingHEVC;
+    case AV_CODEC_ID_MPEG2VIDEO:    return MPP_VIDEO_CodingMPEG2;
     case AV_CODEC_ID_VP8:           return MPP_VIDEO_CodingVP8;
     case AV_CODEC_ID_VP9:           return MPP_VIDEO_CodingVP9;
     default:                        return MPP_VIDEO_CodingUnused;
@@ -405,6 +406,12 @@ static int rkmpp_retrieve_frame(AVCodecContext *avctx, AVFrame *frame)
         frame->color_trc        = mpp_frame_get_color_trc(mppframe);
         frame->colorspace       = mpp_frame_get_colorspace(mppframe);
 
+        if (avctx->codec_id == AV_CODEC_ID_MPEG2VIDEO) {
+            MppFrameRational dar = mpp_frame_get_sar(mppframe);
+            frame->sample_aspect_ratio = av_div_q((AVRational) { dar.num, dar.den },
+                                                  (AVRational) { frame->width, frame->height });
+        }
+
         mode = mpp_frame_get_mode(mppframe);
         frame->interlaced_frame = ((mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) == MPP_FRAME_FLAG_DEINTERLACED);
         frame->top_field_first  = ((mode & MPP_FRAME_FLAG_FIELD_ORDER_MASK) == MPP_FRAME_FLAG_TOP_FIRST);
@@ -585,5 +592,6 @@ static const AVCodecHWConfigInternal *rkmpp_hw_configs[] = {
 
 RKMPP_DEC(h264,  AV_CODEC_ID_H264,          "h264_mp4toannexb")
 RKMPP_DEC(hevc,  AV_CODEC_ID_HEVC,          "hevc_mp4toannexb")
+RKMPP_DEC(mpeg2, AV_CODEC_ID_MPEG2VIDEO,    NULL)
 RKMPP_DEC(vp8,   AV_CODEC_ID_VP8,           NULL)
 RKMPP_DEC(vp9,   AV_CODEC_ID_VP9,           NULL)

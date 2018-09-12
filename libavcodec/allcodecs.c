@@ -192,6 +192,7 @@ extern AVCodec ff_mpeg1_v4l2m2m_decoder;
 extern AVCodec ff_mpeg2_mmal_decoder;
 extern AVCodec ff_mpeg2_crystalhd_decoder;
 extern AVCodec ff_mpeg2_v4l2m2m_decoder;
+extern AVCodec ff_mpeg2_rkmpp_decoder;
 extern AVCodec ff_mpeg2_qsv_decoder;
 extern AVCodec ff_mpeg2_mediacodec_decoder;
 extern AVCodec ff_msa1_decoder;
