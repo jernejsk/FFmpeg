@@ -19,6 +19,7 @@
 #include "h264dec.h"
 #include "hwaccel.h"
 #include "v4l2_request.h"
+#include "h264-ctrls.h"
 
 typedef struct V4L2RequestControlsH264 {
     struct v4l2_ctrl_h264_sps sps;
@@ -58,8 +59,8 @@ static void fill_dpb_entry(struct v4l2_h264_dpb_entry *entry, const H264Picture 
     entry->flags = V4L2_H264_DPB_ENTRY_FLAG_VALID;
     if (pic->reference)
         entry->flags |= V4L2_H264_DPB_ENTRY_FLAG_ACTIVE;
-    if (pic->long_ref)
-        entry->flags |= V4L2_H264_DPB_ENTRY_FLAG_LONG_TERM;
+    /*if (pic->long_ref)
+        entry->flags |= V4L2_H264_DPB_ENTRY_FLAG_LONG_TERM;*/
     entry->top_field_order_cnt = pic->field_poc[0];
     entry->bottom_field_order_cnt = pic->field_poc[1];
 }

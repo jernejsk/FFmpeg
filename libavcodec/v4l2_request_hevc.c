@@ -19,6 +19,7 @@
 #include "hevcdec.h"
 #include "hwaccel.h"
 #include "v4l2_request.h"
+#include "hevc-ctrls.h"
 
 typedef struct V4L2RequestControlsHEVC {
     struct v4l2_ctrl_hevc_sps sps;
