@@ -320,7 +320,7 @@ static void rkmpp_release_frame(void *opaque, uint8_t *data)
     av_free(desc);
 }
 
-static void rkmpp_hevc_mastering_display(AVFrame *frame, MppFrameMasteringDisplayMetadata mastering_display)
+static int rkmpp_hevc_mastering_display(AVFrame *frame, MppFrameMasteringDisplayMetadata mastering_display)
 {
     // HEVC uses a g,b,r ordering, which we convert to a more natural r,g,b
     AVMasteringDisplayMetadata *metadata;
@@ -355,9 +355,10 @@ static void rkmpp_hevc_mastering_display(AVFrame *frame, MppFrameMasteringDispla
     metadata->min_luminance.den = luma_den;
     metadata->has_luminance = 1;
     metadata->has_primaries = 1;
+    return 0;
 }
 
-static void rkmpp_hevc_content_light(AVFrame *frame, MppFrameContentLightMetadata content_light)
+static int rkmpp_hevc_content_light(AVFrame *frame, MppFrameContentLightMetadata content_light)
 {
     AVContentLightMetadata *metadata;
 
@@ -371,6 +372,7 @@ static void rkmpp_hevc_content_light(AVFrame *frame, MppFrameContentLightMetadat
 
     metadata->MaxCLL  = content_light.MaxCLL;
     metadata->MaxFALL = content_light.MaxFALL;
+    return 0;
 }
 
 static int rkmpp_retrieve_frame(AVCodecContext *avctx, AVFrame *frame)
