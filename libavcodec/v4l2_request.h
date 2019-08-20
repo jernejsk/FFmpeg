@@ -58,6 +58,8 @@ int ff_v4l2_request_set_controls(AVCodecContext *avctx, struct v4l2_ext_control 
 
 int ff_v4l2_request_query_control_default_value(AVCodecContext *avctx, uint32_t id);
 
+int ff_v4l2_request_decode_slice(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count, int first_slice, int last_slice);
+
 int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count);
 
 int ff_v4l2_request_init(AVCodecContext *avctx, uint32_t pixelformat, uint32_t buffersize, struct v4l2_ext_control *control, int count);

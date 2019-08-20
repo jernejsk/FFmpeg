@@ -98,7 +98,7 @@ int ff_v4l2_request_query_control_default_value(AVCodecContext *avctx, uint32_t 
     return control.default_value;
 }
 
-static int v4l2_request_queue_buffer(V4L2RequestContext *ctx, int request_fd, V4L2RequestBuffer *buf)
+static int v4l2_request_queue_buffer(V4L2RequestContext *ctx, int request_fd, V4L2RequestBuffer *buf, uint32_t flags)
 {
     struct v4l2_plane planes[1] = {};
     struct v4l2_buffer buffer = {
@@ -108,7 +108,7 @@ static int v4l2_request_queue_buffer(V4L2RequestContext *ctx, int request_fd, V4
         .timestamp.tv_usec = buf->index + 1,
         .bytesused = buf->used,
         .request_fd = request_fd,
-        .flags = (request_fd >= 0) ? V4L2_BUF_FLAG_REQUEST_FD : 0,
+        .flags = ((request_fd >= 0) ? V4L2_BUF_FLAG_REQUEST_FD : 0) | flags,
     };
 
     if (V4L2_TYPE_IS_MULTIPLANAR(buf->buffer.type)) {
@@ -190,7 +190,7 @@ static int v4l2_request_set_drm_descriptor(V4L2RequestDescriptor *req, struct v4
     return 0;
 }
 
-int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count)
+static int v4l2_request_queue_decode(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count, int first_slice, int last_slice)
 {
     V4L2RequestContext *ctx = avctx->internal->hwaccel_priv_data;
     V4L2RequestDescriptor *req = (V4L2RequestDescriptor*)frame->data[0];
@@ -198,7 +198,7 @@ int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v
     fd_set except_fds;
     int ret;
 
-    av_log(avctx, AV_LOG_DEBUG, "%s: avctx=%p used=%u controls=%d index=%d fd=%d request_fd=%d\n", __func__, avctx, req->output.used, count, req->capture.index, req->capture.fd, req->request_fd);
+    av_log(avctx, AV_LOG_DEBUG, "%s: avctx=%p used=%u controls=%d index=%d fd=%d request_fd=%d first_slice=%d last_slice=%d\n", __func__, avctx, req->output.used, count, req->capture.index, req->capture.fd, req->request_fd, first_slice, last_slice);
 
     ret = v4l2_request_set_controls(ctx, req->request_fd, control, count);
     if (ret < 0) {
@@ -208,16 +208,18 @@ int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v
 
     memset(req->output.addr + req->output.used, 0, AV_INPUT_BUFFER_PADDING_SIZE);
 
-    ret = v4l2_request_queue_buffer(ctx, req->request_fd, &req->output);
+    ret = v4l2_request_queue_buffer(ctx, req->request_fd, &req->output, last_slice ? 0 : V4L2_BUF_FLAG_M2M_HOLD_CAPTURE_BUF);
     if (ret < 0) {
         av_log(avctx, AV_LOG_ERROR, "%s: queue output buffer %d failed for request %d, %s (%d)\n", __func__, req->output.index, req->request_fd, strerror(errno), errno);
         return -1;
     }
 
-    ret = v4l2_request_queue_buffer(ctx, -1, &req->capture);
-    if (ret < 0) {
-        av_log(avctx, AV_LOG_ERROR, "%s: queue capture buffer %d failed for request %d, %s (%d)\n", __func__, req->capture.index, req->request_fd, strerror(errno), errno);
-        return -1;
+    if (first_slice) {
+        ret = v4l2_request_queue_buffer(ctx, -1, &req->capture, 0);
+        if (ret < 0) {
+            av_log(avctx, AV_LOG_ERROR, "%s: queue capture buffer %d failed for request %d, %s (%d)\n", __func__, req->capture.index, req->request_fd, strerror(errno), errno);
+            return -1;
+        }
     }
 
     // NOTE: do we need to dequeue when request fails/timeout?
@@ -247,10 +249,12 @@ int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v
         return -1;
     }
 
-    ret = v4l2_request_dequeue_buffer(ctx, &req->capture);
-    if (ret < 0) {
-        av_log(avctx, AV_LOG_ERROR, "%s: dequeue capture buffer %d failed for request %d, %s (%d)\n", __func__, req->capture.index, req->request_fd, strerror(errno), errno);
-        return -1;
+    if (last_slice) {
+        ret = v4l2_request_dequeue_buffer(ctx, &req->capture);
+        if (ret < 0) {
+            av_log(avctx, AV_LOG_ERROR, "%s: dequeue capture buffer %d failed for request %d, %s (%d)\n", __func__, req->capture.index, req->request_fd, strerror(errno), errno);
+            return -1;
+        }
     }
 
     // TODO: check errors
@@ -262,7 +266,10 @@ int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v
         return -1;
     }
 
-    return v4l2_request_set_drm_descriptor(req, &ctx->format);
+    if (last_slice)
+        return v4l2_request_set_drm_descriptor(req, &ctx->format);
+
+    return 0;
 
 fail:
     ret = v4l2_request_dequeue_buffer(ctx, &req->output);
@@ -278,6 +285,16 @@ fail:
         av_log(avctx, AV_LOG_ERROR, "%s: reinit request %d failed, %s (%d)\n", __func__, req->request_fd, strerror(errno), errno);
 
     return -1;
+}
+
+int ff_v4l2_request_decode_slice(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count, int first_slice, int last_slice)
+{
+    return v4l2_request_queue_decode(avctx, frame, control, count, first_slice, last_slice);
+}
+
+int ff_v4l2_request_decode_frame(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count)
+{
+    return v4l2_request_queue_decode(avctx, frame, control, count, 1, 1);
 }
 
 static int v4l2_request_try_format(AVCodecContext *avctx, enum v4l2_buf_type type, uint32_t pixelformat)

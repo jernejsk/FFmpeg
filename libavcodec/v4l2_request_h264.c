@@ -27,6 +27,7 @@ typedef struct V4L2RequestControlsH264 {
     struct v4l2_ctrl_h264_scaling_matrix scaling_matrix;
     struct v4l2_ctrl_h264_decode_params decode_params;
     struct v4l2_ctrl_h264_slice_params slice_params[16];
+    int first_slice;
 } V4L2RequestControlsH264;
 
 typedef struct V4L2RequestContextH264 {
@@ -214,13 +215,16 @@ static int v4l2_request_h264_start_frame(AVCodecContext *avctx,
 
     fill_dpb(&controls->decode_params, h);
 
+    controls->first_slice = 1;
+
     return ff_v4l2_request_reset_frame(avctx, h->cur_pic_ptr->f);
 }
 
-static int v4l2_request_h264_end_frame(AVCodecContext *avctx)
+static int v4l2_request_h264_queue_decode(AVCodecContext *avctx, int last_slice)
 {
     const H264Context *h = avctx->priv_data;
     V4L2RequestControlsH264 *controls = h->cur_pic_ptr->hwaccel_picture_private;
+    V4L2RequestContextH264 *ctx = avctx->internal->hwaccel_priv_data;
 
     struct v4l2_ext_control control[] = {
         {
@@ -250,6 +254,9 @@ static int v4l2_request_h264_end_frame(AVCodecContext *avctx)
         },
     };
 
+    if (ctx->decode_mode == V4L2_MPEG_VIDEO_H264_DECODE_MODE_SLICE_BASED)
+        return ff_v4l2_request_decode_slice(avctx, h->cur_pic_ptr->f, control, FF_ARRAY_ELEMS(control), controls->first_slice, last_slice);
+
     return ff_v4l2_request_decode_frame(avctx, h->cur_pic_ptr->f, control, FF_ARRAY_ELEMS(control));
 }
 
@@ -264,12 +271,13 @@ static int v4l2_request_h264_decode_slice(AVCodecContext *avctx, const uint8_t *
     int i, ret, count, slice = FFMIN(controls->decode_params.num_slices, 15);
 
     if (ctx->decode_mode == V4L2_MPEG_VIDEO_H264_DECODE_MODE_SLICE_BASED && slice) {
-        ret = v4l2_request_h264_end_frame(avctx);
+        ret = v4l2_request_h264_queue_decode(avctx, 0);
         if (ret)
             return ret;
 
         ff_v4l2_request_reset_frame(avctx, h->cur_pic_ptr->f);
         slice = controls->decode_params.num_slices = 0;
+        controls->first_slice = 0;
     }
 
     controls->slice_params[slice] = (struct v4l2_ctrl_h264_slice_params) {
@@ -343,6 +351,11 @@ static int v4l2_request_h264_decode_slice(AVCodecContext *avctx, const uint8_t *
     controls->slice_params[slice].size = req->output.used - controls->slice_params[slice].start_byte_offset;
     controls->decode_params.num_slices++;
     return 0;
+}
+
+static int v4l2_request_h264_end_frame(AVCodecContext *avctx)
+{
+    return v4l2_request_h264_queue_decode(avctx, 1);
 }
 
 static int v4l2_request_h264_set_controls(AVCodecContext *avctx)
