@@ -38,6 +38,7 @@ typedef struct V4L2RequestBuffer {
     uint32_t height;
     uint32_t size;
     uint32_t used;
+    uint32_t capabilities;
     struct v4l2_buffer buffer;
 } V4L2RequestBuffer;
 

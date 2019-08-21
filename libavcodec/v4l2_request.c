@@ -289,6 +289,12 @@ fail:
 
 int ff_v4l2_request_decode_slice(AVCodecContext *avctx, AVFrame *frame, struct v4l2_ext_control *control, int count, int first_slice, int last_slice)
 {
+    V4L2RequestDescriptor *req = (V4L2RequestDescriptor*)frame->data[0];
+
+    // fall back to queue each slice as a full frame
+    if ((req->output.capabilities & V4L2_BUF_CAP_SUPPORTS_M2M_HOLD_CAPTURE_BUF) != V4L2_BUF_CAP_SUPPORTS_M2M_HOLD_CAPTURE_BUF)
+        return v4l2_request_queue_decode(avctx, frame, control, count, 1, 1);
+
     return v4l2_request_queue_decode(avctx, frame, control, count, first_slice, last_slice);
 }
 
@@ -765,6 +771,7 @@ static int v4l2_request_buffer_alloc(AVCodecContext *avctx, V4L2RequestBuffer *b
     }
 
     buf->index = buffers.index;
+    buf->capabilities = buffers.capabilities;
     buf->used = 0;
 
     buf->buffer.type = type;
