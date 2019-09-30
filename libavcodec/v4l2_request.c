@@ -121,6 +121,15 @@ static int v4l2_request_queue_buffer(V4L2RequestContext *ctx, int request_fd, V4
     return ioctl(ctx->video_fd, VIDIOC_QBUF, &buffer);
 }
 
+static int v4l2_request_flush(V4L2RequestContext *ctx)
+{
+	struct v4l2_decoder_cmd dc = {
+		.cmd = V4L2_DEC_CMD_FLUSH,
+	};
+
+	return ioctl(ctx->video_fd, VIDIOC_DECODER_CMD, &dc);
+}
+
 static int v4l2_request_dequeue_buffer(V4L2RequestContext *ctx, V4L2RequestBuffer *buf)
 {
     int ret;
@@ -208,10 +217,19 @@ static int v4l2_request_queue_decode(AVCodecContext *avctx, AVFrame *frame, stru
 
     memset(req->output.addr + req->output.used, 0, AV_INPUT_BUFFER_PADDING_SIZE);
 
-    ret = v4l2_request_queue_buffer(ctx, req->request_fd, &req->output, last_slice ? 0 : V4L2_BUF_FLAG_M2M_HOLD_CAPTURE_BUF);
+    ret = v4l2_request_queue_buffer(ctx, req->request_fd, &req->output, V4L2_BUF_FLAG_M2M_HOLD_CAPTURE_BUF);
     if (ret < 0) {
         av_log(avctx, AV_LOG_ERROR, "%s: queue output buffer %d failed for request %d, %s (%d)\n", __func__, req->output.index, req->request_fd, strerror(errno), errno);
         return -1;
+    }
+
+    if (last_slice) {
+	    ret = v4l2_request_flush(ctx);
+	    if (ret < 0) {
+		    av_log(avctx, AV_LOG_ERROR, "%s: can't flush buffers, %s (%d)\n", __func__, strerror(errno), errno);
+		    return -1;
+	    }
+	    av_log(avctx, AV_LOG_DEBUG, "%s: buffers flushed\n", __func__);
     }
 
     if (first_slice) {
