@@ -28,6 +28,7 @@ typedef struct V4L2RequestContext {
     int media_fd;
     enum v4l2_buf_type output_type;
     struct v4l2_format format;
+    int timestamp;
 } V4L2RequestContext;
 
 typedef struct V4L2RequestBuffer {

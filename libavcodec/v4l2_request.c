@@ -105,7 +105,7 @@ static int v4l2_request_queue_buffer(V4L2RequestContext *ctx, int request_fd, V4
         .type = buf->buffer.type,
         .memory = buf->buffer.memory,
         .index = buf->index,
-        .timestamp.tv_usec = buf->index + 1,
+        .timestamp.tv_usec = ctx->timestamp,
         .bytesused = buf->used,
         .request_fd = request_fd,
         .flags = ((request_fd >= 0) ? V4L2_BUF_FLAG_REQUEST_FD : 0) | flags,
@@ -199,6 +199,9 @@ static int v4l2_request_queue_decode(AVCodecContext *avctx, AVFrame *frame, stru
     int ret;
 
     av_log(avctx, AV_LOG_DEBUG, "%s: avctx=%p used=%u controls=%d index=%d fd=%d request_fd=%d first_slice=%d last_slice=%d\n", __func__, avctx, req->output.used, count, req->capture.index, req->capture.fd, req->request_fd, first_slice, last_slice);
+
+    if (first_slice)
+        ctx->timestamp++;
 
     ret = v4l2_request_set_controls(ctx, req->request_fd, control, count);
     if (ret < 0) {
@@ -651,6 +654,7 @@ int ff_v4l2_request_init(AVCodecContext *avctx, uint32_t pixelformat, uint32_t b
 
     ctx->media_fd = -1;
     ctx->video_fd = -1;
+    ctx->timestamp = 0;
 
     udev = udev_new();
     if (!udev) {
@@ -783,8 +787,6 @@ static int v4l2_request_buffer_alloc(AVCodecContext *avctx, V4L2RequestBuffer *b
         av_log(avctx, AV_LOG_ERROR, "%s: query buffer %d failed, %s (%d)\n", __func__, buf->index, strerror(errno), errno);
         return ret;
     }
-
-    buf->buffer.timestamp.tv_usec = buf->index + 1;
 
     if (V4L2_TYPE_IS_OUTPUT(type)) {
         void *addr = mmap(NULL, buf->size, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->video_fd, V4L2_TYPE_IS_MULTIPLANAR(type) ? buf->buffer.m.planes[0].m.mem_offset : buf->buffer.m.offset);
