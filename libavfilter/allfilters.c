@@ -248,6 +248,7 @@ extern const AVFilter ff_vf_dedot;
 extern const AVFilter ff_vf_deflate;
 extern const AVFilter ff_vf_deflicker;
 extern const AVFilter ff_vf_deinterlace_qsv;
+extern const AVFilter ff_vf_deinterlace_v4l2m2m;
 extern const AVFilter ff_vf_deinterlace_vaapi;
 extern const AVFilter ff_vf_dejudder;
 extern const AVFilter ff_vf_delogo;
