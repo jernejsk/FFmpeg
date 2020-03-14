@@ -39,6 +39,7 @@ extern AVInputFormat  ff_gdigrab_demuxer;
 extern AVInputFormat  ff_iec61883_demuxer;
 extern AVInputFormat  ff_jack_demuxer;
 extern AVInputFormat  ff_kmsgrab_demuxer;
+extern AVOutputFormat ff_kms_muxer;
 extern AVInputFormat  ff_lavfi_demuxer;
 extern AVInputFormat  ff_openal_demuxer;
 extern AVOutputFormat ff_opengl_muxer;
