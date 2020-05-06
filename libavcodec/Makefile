@@ -969,6 +969,7 @@ OBJS-$(CONFIG_VC1_D3D11VA_HWACCEL)        += dxva2_vc1.o
 OBJS-$(CONFIG_VC1_DXVA2_HWACCEL)          += dxva2_vc1.o
 OBJS-$(CONFIG_VC1_NVDEC_HWACCEL)          += nvdec_vc1.o
 OBJS-$(CONFIG_VC1_QSV_HWACCEL)            += qsvdec.o
+OBJS-$(CONFIG_VC1_V4L2REQUEST_HWACCEL)    += v4l2_request_vc1.o
 OBJS-$(CONFIG_VC1_VAAPI_HWACCEL)          += vaapi_vc1.o
 OBJS-$(CONFIG_VC1_VDPAU_HWACCEL)          += vdpau_vc1.o
 OBJS-$(CONFIG_VP8_NVDEC_HWACCEL)          += nvdec_vp8.o

@@ -18,10 +18,12 @@
 
 #include <drm_fourcc.h>
 #include <linux/media.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <sys/sysmacros.h>
 #include <libudev.h>
