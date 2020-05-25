@@ -40,7 +40,7 @@ static int vc1_get_PTYPE(const VC1Context *v)
 }
 
 /** Reconstruct bitstream FPTYPE (9.1.1.42, index into Table-105) */
-static int vc1_get_FPTYPE(const VC1Context *v)
+/*static int vc1_get_FPTYPE(const VC1Context *v)
 {
     const MpegEncContext *s = &v->s;
     switch (s->pict_type) {
@@ -49,12 +49,13 @@ static int vc1_get_FPTYPE(const VC1Context *v)
         case AV_PICTURE_TYPE_B: return v->bi_type ? 7 : 4;
     }
     return 0;
-}
+}*/
 
 /** Reconstruct bitstream MVMODE (7.1.1.32) */
 static inline int vc1_get_MVMODE(const VC1Context *v)
 {
-    if ((v->fcm == PROGRESSIVE || v->fcm == ILACE_FIELD) &&
+    //return v->mv_mode;
+    if (/*(v->fcm == PROGRESSIVE || v->fcm == ILACE_FIELD) &&*/
         ((v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) ||
         (v->s.pict_type == AV_PICTURE_TYPE_B && !v->bi_type)))
         return v->mv_mode;
@@ -64,6 +65,7 @@ static inline int vc1_get_MVMODE(const VC1Context *v)
 /** Reconstruct bitstream MVMODE2 (7.1.1.33) */
 static inline int vc1_get_MVMODE2(const VC1Context *v)
 {
+    //return v->mv_mode2;
     if ((v->fcm == PROGRESSIVE || v->fcm == ILACE_FIELD) &&
         (v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) &&
         v->mv_mode == MV_PMODE_INTENSITY_COMP)
@@ -73,6 +75,7 @@ static inline int vc1_get_MVMODE2(const VC1Context *v)
 
 static inline int vc1_get_LUMSCALE(const VC1Context *v)
 {
+    //return v->lumscale;
     if (v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) {
         if ((v->fcm == PROGRESSIVE && v->mv_mode == MV_PMODE_INTENSITY_COMP) ||
             (v->fcm == ILACE_FRAME && v->intcomp))
@@ -89,6 +92,7 @@ static inline int vc1_get_LUMSCALE(const VC1Context *v)
 
 static inline int vc1_get_LUMSHIFT(const VC1Context *v)
 {
+    //return v->lumshift;
     if (v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) {
         if ((v->fcm == PROGRESSIVE && v->mv_mode == MV_PMODE_INTENSITY_COMP) ||
             (v->fcm == ILACE_FRAME && v->intcomp))
@@ -105,6 +109,7 @@ static inline int vc1_get_LUMSHIFT(const VC1Context *v)
 
 av_unused static inline int vc1_get_LUMSCALE2(const VC1Context *v)
 {
+    //return v->lumscale2;
     if ((v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) &&
         v->fcm == ILACE_FIELD &&
         v->mv_mode == MV_PMODE_INTENSITY_COMP &&
@@ -115,6 +120,7 @@ av_unused static inline int vc1_get_LUMSCALE2(const VC1Context *v)
 
 av_unused static inline int vc1_get_LUMSHIFT2(const VC1Context *v)
 {
+    //return v->lumshift2;
     if ((v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) &&
         v->fcm == ILACE_FIELD &&
         v->mv_mode == MV_PMODE_INTENSITY_COMP &&
@@ -125,6 +131,7 @@ av_unused static inline int vc1_get_LUMSHIFT2(const VC1Context *v)
 
 av_unused static inline int vc1_get_INTCOMPFIELD(const VC1Context *v)
 {
+    //return v->intcompfield;
     if ((v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) &&
         v->fcm == ILACE_FIELD &&
         v->mv_mode == MV_PMODE_INTENSITY_COMP)
@@ -242,6 +249,14 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
                                         av_unused const uint8_t *buffer,
                                         av_unused uint32_t size)
 {
+    //const MpegEncContext *s = avctx->priv_data;
+
+    //return ff_v4l2_request_reset_frame(avctx, s->current_picture_ptr->f);
+    return 0;
+}
+
+static void v4l2_request_vc1_fill_slice(AVCodecContext *avctx)
+{
     const VC1Context *v = avctx->priv_data;
     const MpegEncContext *s = &v->s;
     V4L2RequestControlsVC1 *controls = s->current_picture_ptr->hwaccel_picture_private;
@@ -250,6 +265,8 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
     struct v4l2_vc1_vopdquant *vopdquant;
     struct v4l2_vc1_sequence *sequence;
     struct v4l2_vc1_metadata *metadata;
+
+    memset(&controls->slice_params, 0, sizeof(controls->slice_params));
 
     sequence = &controls->slice_params.sequence;
     entrypoint = &controls->slice_params.entrypoint_header;
@@ -274,7 +291,8 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
         },
 
         .picture_layer = {
-            .ptype = (v->fcm == ILACE_FIELD ? vc1_get_FPTYPE(v) : vc1_get_PTYPE(v)),
+            //.ptype = (v->fcm == ILACE_FIELD ? vc1_get_FPTYPE(v) : vc1_get_PTYPE(v)),
+            .ptype = vc1_get_PTYPE(v),
             .pqindex = v->pqindex,
             .mvrange = v->mvrange,
             .respic = v->respic,
@@ -314,6 +332,7 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
         },
     };
 
+    sequence->flags = 0;
     if (v->broadcast)
         sequence->flags |= V4L2_VC1_SEQUENCE_FLAG_PULLDOWN;
     if (v->interlace)
@@ -325,6 +344,7 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
     if (v->psf)
         sequence->flags |= V4L2_VC1_SEQUENCE_FLAG_PSF;
 
+    entrypoint->flags = 0;
     if (v->broken_link)
         entrypoint->flags |= V4L2_VC1_ENTRYPOINT_HEADER_FLAG_BROKEN_LINK;
     if (v->closed_entry)
@@ -350,6 +370,7 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
     if (v->range_mapuv_flag)
         entrypoint->flags |= V4L2_VC1_ENTRYPOINT_HEADER_FLAG_RANGE_MAPUV;
 
+    picture->flags = 0;
     if (v->rangeredfrm)
         picture->flags |= V4L2_VC1_PICTURE_LAYER_FLAG_RANGEREDFRM;
     if (v->halfpq)
@@ -375,11 +396,13 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
     if (v->second_field)
         picture->flags |= V4L2_VC1_PICTURE_LAYER_FLAG_SECOND_FIELD;
 
+    vopdquant->flags = 0;
     if (v->dquantfrm)
         vopdquant->flags |= V4L2_VC1_VOPDQUANT_FLAG_DQUANTFRM;
     if (v->dqbilevel)
         vopdquant->flags |= V4L2_VC1_VOPDQUANT_FLAG_DQBILEVEL;
 
+    metadata->flags = 0;
     if (v->multires)
         metadata->flags |= V4L2_VC1_METADATA_FLAG_MULTIRES;
     if (v->resync_marker)
@@ -387,6 +410,7 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
     if (v->rangered)
         metadata->flags |= V4L2_VC1_METADATA_FLAG_RANGERED;
 
+    controls->slice_params.raw_coding_flags = 0;
     if (v->mv_type_is_raw)
         controls->slice_params.raw_coding_flags |= V4L2_VC1_RAW_CODING_FLAG_MVTYPEMB;
     if (v->dmb_is_raw)
@@ -403,15 +427,14 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
         controls->slice_params.raw_coding_flags |= V4L2_VC1_RAW_CODING_FLAG_OVERFLAGS;
 
     switch (s->pict_type) {
-    case AV_PICTURE_TYPE_B:
-        controls->slice_params.backward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->next_picture.f);
-        // fall-through
-    case AV_PICTURE_TYPE_P:
-        controls->slice_params.forward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->last_picture.f);
+        case AV_PICTURE_TYPE_B:
+            controls->slice_params.backward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->next_picture.f);
+            // fall-through
+        case AV_PICTURE_TYPE_P:
+            controls->slice_params.forward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->last_picture.f);
     }
 
     controls->bitplanes.bitplane_flags = 0;
-
     if (vc1_has_MVTYPEMB_bitplane(v)) {
         controls->bitplanes.bitplane_flags |= V4L2_VC1_BITPLANE_FLAG_MVTYPEMB;
         vc1_pack_bitplanes(controls->bitplanes.mvtypemb, v->mv_type_mb_plane, s);
@@ -440,18 +463,9 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
         controls->bitplanes.bitplane_flags |= V4L2_VC1_BITPLANE_FLAG_OVERFLAGS;
         vc1_pack_bitplanes(controls->bitplanes.overflags, v->over_flags_plane, s);
     }
-
-    return ff_v4l2_request_reset_frame(avctx, s->current_picture_ptr->f);
 }
 
-static int v4l2_request_vc1_decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
-{
-    const MpegEncContext *s = avctx->priv_data;
-
-    return ff_v4l2_request_append_output_buffer(avctx, s->current_picture_ptr->f, buffer, size);
-}
-
-static int v4l2_request_vc1_end_frame(AVCodecContext *avctx)
+static int v4l2_request_vc1_queue_decode(AVCodecContext *avctx)
 {
     const MpegEncContext *s = avctx->priv_data;
     V4L2RequestControlsVC1 *controls = s->current_picture_ptr->hwaccel_picture_private;
@@ -471,8 +485,36 @@ static int v4l2_request_vc1_end_frame(AVCodecContext *avctx)
     };
 
     controls->slice_params.bit_size = req->output.used * 8;
+    controls->slice_params.data_bit_offset = get_bits_count(&s->gb);
 
     return ff_v4l2_request_decode_frame(avctx, s->current_picture_ptr->f, control, FF_ARRAY_ELEMS(control));
+}
+
+static int v4l2_request_vc1_decode_slice(AVCodecContext *avctx, const uint8_t *buffer, uint32_t size)
+{
+    const MpegEncContext *s = avctx->priv_data;
+    int ret;
+
+    ff_v4l2_request_reset_frame(avctx, s->current_picture_ptr->f);
+
+    v4l2_request_vc1_fill_slice(avctx);
+
+    /* Current bit buffer is beyond any marker for VC-1, so skip it */
+    if (avctx->codec_id == AV_CODEC_ID_VC1 && IS_MARKER(AV_RB32(buffer))) {
+	    buffer += 4;
+	    size -= 4;
+    }
+
+    ret = ff_v4l2_request_append_output_buffer(avctx, s->current_picture_ptr->f, buffer, size);
+    if (ret)
+        return ret;
+
+    return v4l2_request_vc1_queue_decode(avctx);
+}
+
+static int v4l2_request_vc1_end_frame(AVCodecContext *avctx)
+{
+    return 0;
 }
 
 static int v4l2_request_vc1_init(AVCodecContext *avctx)
