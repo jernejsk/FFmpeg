@@ -195,6 +195,9 @@ static void v4l2_request_hevc_fill_slice_params(const HEVCContext *h,
     if (sh->slice_loop_filter_across_slices_enabled_flag)
         slice_params->flags |= V4L2_HEVC_SLICE_PARAMS_FLAG_SLICE_LOOP_FILTER_ACROSS_SLICES_ENABLED;
 
+    if (sh->dependent_slice_segment_flag)
+        slice_params->flags |= V4L2_HEVC_SLICE_PARAMS_FLAG_DEPENDENT_SLICE_SEGMENT;
+
     for (i = 0; i < FF_ARRAY_ELEMS(h->DPB); i++) {
         const HEVCFrame *frame = &h->DPB[i];
         if (frame != pic && (frame->flags & (HEVC_FRAME_FLAG_LONG_REF | HEVC_FRAME_FLAG_SHORT_REF))) {
