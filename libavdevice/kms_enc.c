@@ -183,7 +183,7 @@ static int xv_write_packet(AVFormatContext *s, AVPacket *pkt)
                                              av_frame_cropped_height(frame),
                                              desc->layers[0].format, bo_plane_handles,
                                              pitches, offsets, modifiers,
-                                             &da->fb_handle, 0 /** 0 if no mods */) != 0) {
+                                             &da->fb_handle, DRM_MODE_FB_MODIFIERS /** 0 if no mods */) != 0) {
                 av_log(s, AV_LOG_WARNING, "drmModeAddFB2WithModifiers failed: %s\n", ERRSTR);
                 return -1;
             }
@@ -381,12 +381,15 @@ static int find_plane(struct AVFormatContext * const avctx, int drmfd, struct dr
       }
 
       s->planeId = plane->plane_id;
+      av_log(avctx, AV_LOG_INFO, "Found plane %d\n", s->planeId);
       drmModeFreePlane(plane);
       break;
    }
 
-   if (i == planes->count_planes)
+   if (i == planes->count_planes) {
+      av_log(avctx, AV_LOG_ERROR, "No plane found!\n");
       ret = -1;
+   }
 
    drmModeFreePlaneResources(planes);
    return ret;
