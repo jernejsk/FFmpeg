@@ -16,11 +16,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "hwaccel.h"
+#include "hwconfig.h"
 #include "v4l2_request.h"
 #include "vc1.h"
-#include "vc1-ctrls.h"
 #include "vc1data.h"
+#include "vc1-ctrls.h"
 
 typedef struct V4L2RequestControlsVC1 {
     struct v4l2_ctrl_vc1_slice_params slice_params;
@@ -473,12 +473,12 @@ static int v4l2_request_vc1_queue_decode(AVCodecContext *avctx)
 
     struct v4l2_ext_control control[] = {
         {
-            .id = V4L2_CID_MPEG_VIDEO_VC1_SLICE_PARAMS,
+            .id = V4L2_CID_STATELESS_VC1_SLICE_PARAMS,
             .ptr = &controls->slice_params,
             .size = sizeof(controls->slice_params),
         },
         {
-            .id = V4L2_CID_MPEG_VIDEO_VC1_BITPLANES,
+            .id = V4L2_CID_STATELESS_VC1_BITPLANES,
             .ptr = &controls->bitplanes,
             .size = sizeof(controls->bitplanes),
         },
