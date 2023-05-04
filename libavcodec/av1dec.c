@@ -24,6 +24,7 @@
 #include "libavutil/pixdesc.h"
 #include "libavutil/opt.h"
 #include "avcodec.h"
+#include "av1_parse.h"
 #include "av1dec.h"
 #include "bytestream.h"
 #include "codec_internal.h"
@@ -699,15 +700,10 @@ static int set_context_with_sequence(AVCodecContext *avctx,
     }
     avctx->sample_aspect_ratio = (AVRational) { 1, 1 };
 
-    if (seq->timing_info.num_units_in_display_tick &&
-        seq->timing_info.time_scale) {
-        av_reduce(&avctx->framerate.den, &avctx->framerate.num,
-                  seq->timing_info.num_units_in_display_tick,
-                  seq->timing_info.time_scale,
-                  INT_MAX);
-        if (seq->timing_info.equal_picture_interval)
-            avctx->ticks_per_frame = seq->timing_info.num_ticks_per_picture_minus_1 + 1;
-    }
+    if (seq->timing_info_present_flag)
+        avctx->framerate = ff_av1_framerate(1LL + seq->timing_info.num_ticks_per_picture_minus_1,
+                                            seq->timing_info.num_units_in_display_tick,
+                                            seq->timing_info.time_scale);
 
     return 0;
 }
