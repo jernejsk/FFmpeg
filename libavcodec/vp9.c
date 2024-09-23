@@ -697,7 +697,8 @@ static int decode_frame_header(AVCodecContext *avctx,
                                          get_bits(&s->gb, 8) : 255;
         }
 
-        if (get_bits1(&s->gb)) {
+        s->s.h.segmentation.update_data = get_bits1(&s->gb);
+        if (s->s.h.segmentation.update_data) {
             s->s.h.segmentation.absolute_vals = get_bits1(&s->gb);
             for (i = 0; i < 8; i++) {
                 if ((s->s.h.segmentation.feat[i].q_enabled = get_bits1(&s->gb)))
