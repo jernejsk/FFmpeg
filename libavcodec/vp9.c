@@ -168,6 +168,7 @@ static int update_size(AVCodecContext *avctx, int w, int h)
                      CONFIG_VP9_D3D11VA_HWACCEL * 2 + \
                      CONFIG_VP9_D3D12VA_HWACCEL + \
                      CONFIG_VP9_NVDEC_HWACCEL + \
+                     CONFIG_VP9_V4L2REQUEST_HWACCEL + \
                      CONFIG_VP9_VAAPI_HWACCEL + \
                      CONFIG_VP9_VDPAU_HWACCEL + \
                      CONFIG_VP9_VIDEOTOOLBOX_HWACCEL + \
@@ -213,6 +214,9 @@ static int update_size(AVCodecContext *avctx, int w, int h)
 #endif
 #if CONFIG_VP9_VULKAN_HWACCEL
             *fmtp++ = AV_PIX_FMT_VULKAN;
+#endif
+#if CONFIG_VP9_V4L2REQUEST_HWACCEL
+            *fmtp++ = AV_PIX_FMT_DRM_PRIME;
 #endif
             break;
         case AV_PIX_FMT_YUV420P12:
@@ -1959,6 +1963,9 @@ const FFCodec ff_vp9_decoder = {
 #endif
 #if CONFIG_VP9_VULKAN_HWACCEL
                                HWACCEL_VULKAN(vp9),
+#endif
+#if CONFIG_VP9_V4L2REQUEST_HWACCEL
+                               HWACCEL_V4L2REQUEST(vp9),
 #endif
                                NULL
                            },
