@@ -153,13 +153,13 @@ struct v4l2_ctrl_vc1_slice_params {
 struct v4l2_ctrl_vc1_bitplanes {
 	__u8	bitplane_flags;
 
-	__u8	mvtypemb[1024];
-	__u8	directmb[1024];
-	__u8	skipmb[1024];
-	__u8	fieldtx[1024];
-	__u8	forwardmb[1024];
-	__u8	acpred[1024];
-	__u8	overflags[1024];
+	__u8	mvtypemb[2048];
+	__u8	directmb[2048];
+	__u8	skipmb[2048];
+	__u8	fieldtx[2048];
+	__u8	forwardmb[2048];
+	__u8	acpred[2048];
+	__u8	overflags[2048];
 };
 
 #endif
