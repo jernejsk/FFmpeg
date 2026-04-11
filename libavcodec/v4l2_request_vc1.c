@@ -200,6 +200,18 @@ static inline int vc1_has_ACPRED_bitplane(const VC1Context *v)
             (v->s.pict_type == AV_PICTURE_TYPE_B && v->bi_type));
 }
 
+/** Compute condover for hardware: only I/BI use parsed value */
+static inline int vc1_get_CONDOVER(const VC1Context *v)
+{
+    if (v->profile == PROFILE_ADVANCED &&
+        (v->s.pict_type == AV_PICTURE_TYPE_I ||
+         (v->s.pict_type == AV_PICTURE_TYPE_B && v->bi_type)))
+        return v->condover;
+    if (v->s.pict_type == AV_PICTURE_TYPE_B || v->pq < 9 || !v->overlap)
+        return CONDOVER_NONE;
+    return CONDOVER_ALL;
+}
+
 /** Check whether the OVERFLAGS bitplane is present */
 static inline int vc1_has_OVERFLAGS_bitplane(const VC1Context *v)
 {
@@ -319,7 +331,7 @@ static void v4l2_request_vc1_fill_slice(AVCodecContext *avctx)
             .fourmvbptab = v->fourmvbptab,
             .ttfrm = vc1_get_TTFRM(v),
             .refdist = v->refdist,
-            .condover = v->condover,
+            .condover = vc1_get_CONDOVER(v),
             .imvtab = v->imvtab,
             .icbptab = v->icbptab,
         },
