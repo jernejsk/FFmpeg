@@ -110,21 +110,27 @@ static inline int vc1_get_LUMSHIFT(const VC1Context *v)
 
 av_unused static inline int vc1_get_LUMSCALE2(const VC1Context *v)
 {
-    if ((v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) &&
-        v->fcm == ILACE_FIELD &&
-        v->mv_mode == MV_PMODE_INTENSITY_COMP &&
-        v->intcompfield == 3)
-        return v->lumscale2;
+    if (v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) {
+        if (v->fcm == ILACE_FRAME && v->intcomp)
+            return v->lumscale2;
+        if (v->fcm == ILACE_FIELD &&
+            v->mv_mode == MV_PMODE_INTENSITY_COMP &&
+            v->intcompfield == 3)
+            return v->lumscale2;
+    }
     return 0;
 }
 
 av_unused static inline int vc1_get_LUMSHIFT2(const VC1Context *v)
 {
-    if ((v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) &&
-        v->fcm == ILACE_FIELD &&
-        v->mv_mode == MV_PMODE_INTENSITY_COMP &&
-        v->intcompfield == 3)
-        return v->lumshift2;
+    if (v->s.pict_type == AV_PICTURE_TYPE_P && !v->p_frame_skipped) {
+        if (v->fcm == ILACE_FRAME && v->intcomp)
+            return v->lumshift2;
+        if (v->fcm == ILACE_FIELD &&
+            v->mv_mode == MV_PMODE_INTENSITY_COMP &&
+            v->intcompfield == 3)
+            return v->lumshift2;
+    }
     return 0;
 }
 
