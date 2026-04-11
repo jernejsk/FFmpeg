@@ -231,12 +231,12 @@ static inline void vc1_pack_bitplanes(uint8_t *bitplane, const uint8_t *source, 
 {
     int x, y, n, ff_bp_index;
 
-    memset(bitplane, 0, 1024);
+    memset(bitplane, 0, 2048);
 
     n = 0;
     for (y = 0; y < s->mb_height; y++)
         for (x = 0; x < s->mb_width; x++, n++) {
-            if (n == 1024 * 8) {
+            if (n == 2048 * 8) {
                 av_log(s->avctx, AV_LOG_ERROR, "%s: Not enough space to store bitplane. Number of MB: %d\n", __func__, s->mb_height * s->mb_width);
                 return;
             }
