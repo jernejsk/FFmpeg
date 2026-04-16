@@ -79,6 +79,7 @@ extern const struct FFHWAccel ff_vc1_d3d11va2_hwaccel;
 extern const struct FFHWAccel ff_vc1_d3d12va_hwaccel;
 extern const struct FFHWAccel ff_vc1_dxva2_hwaccel;
 extern const struct FFHWAccel ff_vc1_nvdec_hwaccel;
+extern const struct FFHWAccel ff_vc1_v4l2request_hwaccel;
 extern const struct FFHWAccel ff_vc1_vaapi_hwaccel;
 extern const struct FFHWAccel ff_vc1_vdpau_hwaccel;
 extern const struct FFHWAccel ff_vp8_nvdec_hwaccel;
@@ -100,6 +101,7 @@ extern const struct FFHWAccel ff_wmv3_d3d11va2_hwaccel;
 extern const struct FFHWAccel ff_wmv3_d3d12va_hwaccel;
 extern const struct FFHWAccel ff_wmv3_dxva2_hwaccel;
 extern const struct FFHWAccel ff_wmv3_nvdec_hwaccel;
+extern const struct FFHWAccel ff_wmv3_v4l2request_hwaccel;
 extern const struct FFHWAccel ff_wmv3_vaapi_hwaccel;
 extern const struct FFHWAccel ff_wmv3_vdpau_hwaccel;
 
