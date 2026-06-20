@@ -44,18 +44,6 @@ static int vc1_get_PTYPE(const VC1Context *v)
     return 0;
 }
 
-/** Reconstruct bitstream FPTYPE (9.1.1.42, index into Table-105) */
-static int vc1_get_FPTYPE(const VC1Context *v)
-{
-    const MpegEncContext *s = &v->s;
-    switch (s->pict_type) {
-        case AV_PICTURE_TYPE_I: return 0;
-        case AV_PICTURE_TYPE_P: return 3;
-        case AV_PICTURE_TYPE_B: return v->bi_type ? 7 : 4;
-    }
-    return 0;
-}
-
 /** Reconstruct bitstream MVMODE (7.1.1.32) */
 static inline int vc1_get_MVMODE(const VC1Context *v)
 {
@@ -302,7 +290,9 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
         },
 
         .picture_layer = {
-            .ptype = (v->fcm == ILACE_FIELD ? vc1_get_FPTYPE(v) : vc1_get_PTYPE(v)),
+            /* HW wants the per-field picture type (Table-35 PTYPE) even for
+             * field pictures, not the FPTYPE field-pair code. */
+            .ptype = vc1_get_PTYPE(v),
             .pqindex = v->pqindex,
             .mvrange = v->mvrange,
             .respic = v->respic,
