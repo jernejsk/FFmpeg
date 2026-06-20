@@ -438,10 +438,12 @@ static int v4l2_request_vc1_start_frame(AVCodecContext *avctx,
 
     switch (s->pict_type) {
         case AV_PICTURE_TYPE_B:
-            controls->slice_params.backward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->next_pic.ptr->f);
+            if (s->next_pic.ptr)
+                controls->slice_params.backward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->next_pic.ptr->f);
             // fall-through
         case AV_PICTURE_TYPE_P:
-            controls->slice_params.forward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->last_pic.ptr->f);
+            if (s->last_pic.ptr)
+                controls->slice_params.forward_ref_ts = ff_v4l2_request_get_capture_timestamp(s->last_pic.ptr->f);
     }
 
     controls->bitplanes.bitplane_flags = 0;
