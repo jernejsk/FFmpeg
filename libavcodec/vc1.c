@@ -261,8 +261,10 @@ static int vop_dquant_decoding(VC1Context *v)
     }
 
     pqdiff = get_bits(gb, 3);
+    v->pqdiff = pqdiff;
+    v->abspq  = 0;
     if (pqdiff == 7)
-        v->altpq = get_bits(gb, 5);
+        v->altpq = v->abspq = get_bits(gb, 5);
     else
         v->altpq = v->pq + pqdiff + 1;
 

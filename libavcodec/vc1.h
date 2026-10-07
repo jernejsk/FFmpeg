@@ -240,6 +240,7 @@ typedef struct VC1Context{
     int k_y;                     ///< Number of bits for MVs (depends on MV range)
     int range_x, range_y;        ///< MV range
     uint8_t pq, altpq;           ///< Current/alternate frame quantizer scale
+    uint8_t pqdiff, abspq;       ///< PQDIFF and ABSPQ syntax elements
     uint8_t zz_8x8[4][64];       ///< Zigzag table for TT_8x8, permuted for IDCT
     int left_blk_sh, top_blk_sh; ///< Either 3 or 0, positions of l/t in blk[]
     const uint8_t* zz_8x4;       ///< Zigzag scan table for TT_8x4 coding mode
