@@ -722,10 +722,36 @@ void ff_vc1_pred_b_mv(VC1Context *v, int dmv_x[2], int dmv_y[2],
     if (direct && s->next_pic.ptr->field_picture)
         av_log(s->avctx, AV_LOG_WARNING, "Mixed frame/field direct mode not supported\n");
 
-    s->mv[0][0][0] = scale_mv(s->next_pic.motion_val[1][xy][0], v->bfraction, 0, s->quarter_sample);
-    s->mv[0][0][1] = scale_mv(s->next_pic.motion_val[1][xy][1], v->bfraction, 0, s->quarter_sample);
-    s->mv[1][0][0] = scale_mv(s->next_pic.motion_val[1][xy][0], v->bfraction, 1, s->quarter_sample);
-    s->mv[1][0][1] = scale_mv(s->next_pic.motion_val[1][xy][1], v->bfraction, 1, s->quarter_sample);
+    {
+        int col_x = s->next_pic.motion_val[1][xy][0];
+        int col_y = s->next_pic.motion_val[1][xy][1];
+
+        /*
+         * Simple/Main profile: the co-located motion vector is pulled back
+         * like a chroma vector before it is scaled (SMPTE reference decoder,
+         * vc1DERIVEMV_DirectMV() -> vc1CROPMV_ChromaPullBack()).
+         */
+        if (v->profile < PROFILE_ADVANCED) {
+            int ix = s->mb_x * 8 + (col_x >> 2);
+            int iy = s->mb_y * 8 + (col_y >> 2);
+            int w  = s->mb_width  * 8;
+            int h  = s->mb_height * 8;
+
+            if (ix < -8)
+                col_x -= 4 * (ix + 8);
+            else if (ix > w)
+                col_x -= 4 * (ix - w);
+            if (iy < -8)
+                col_y -= 4 * (iy + 8);
+            else if (iy > h)
+                col_y -= 4 * (iy - h);
+        }
+
+        s->mv[0][0][0] = scale_mv(col_x, v->bfraction, 0, s->quarter_sample);
+        s->mv[0][0][1] = scale_mv(col_y, v->bfraction, 0, s->quarter_sample);
+        s->mv[1][0][0] = scale_mv(col_x, v->bfraction, 1, s->quarter_sample);
+        s->mv[1][0][1] = scale_mv(col_y, v->bfraction, 1, s->quarter_sample);
+    }
 
     /* Pullback predicted motion vectors as specified in 8.4.5.4 */
     s->mv[0][0][0] = av_clip(s->mv[0][0][0], -60 - (s->mb_x << 6), (s->mb_width  << 6) - 4 - (s->mb_x << 6));
