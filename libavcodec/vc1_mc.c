@@ -1027,8 +1027,8 @@ void ff_vc1_interp_mc(VC1Context *v)
         uvmy = uvmy - 2 + 4 * v->cur_field_type;
     }
     if (v->fastuvmc) {
-        uvmx = uvmx + ((uvmx < 0) ? -(uvmx & 1) : (uvmx & 1));
-        uvmy = uvmy + ((uvmy < 0) ? -(uvmy & 1) : (uvmy & 1));
+        uvmx = uvmx + ((uvmx < 0) ? (uvmx & 1) : -(uvmx & 1));
+        uvmy = uvmy + ((uvmy < 0) ? (uvmy & 1) : -(uvmy & 1));
     }
     srcY = s->next_pic.data[0];
     srcU = s->next_pic.data[1];
