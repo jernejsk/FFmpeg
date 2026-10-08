@@ -102,6 +102,13 @@ static int bitplane_decoding(uint8_t* data, int *raw_flag, VC1Context *v)
 
     width  = v->s.mb_width;
     height = v->s.mb_height >> v->field_mode;
+    /* RESPIC: Simple/Main picture coded at half width and/or height */
+    if (v->profile < PROFILE_ADVANCED && v->multires) {
+        if (v->respic & 1)
+            width  = (v->s.width  / 2 + 15) >> 4;
+        if (v->respic & 2)
+            height = (v->s.height / 2 + 15) >> 4;
+    }
     stride = v->s.mb_stride;
     invert = get_bits1(gb);
     imode = get_vlc2(gb, ff_vc1_imode_vlc, VC1_IMODE_VLC_BITS, 1);
