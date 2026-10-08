@@ -695,7 +695,8 @@ int ff_vc1_parse_frame_header(VC1Context *v, GetBitContext* gb)
     v->k_y = v->mvrange + 8; //k_y can be 8 9 10 11
     v->range_x = 1 << (v->k_x - 1);
     v->range_y = 1 << (v->k_y - 1);
-    if (v->multires && v->s.pict_type != AV_PICTURE_TYPE_B)
+    if (v->multires && (v->s.pict_type == AV_PICTURE_TYPE_I ||
+                        v->s.pict_type == AV_PICTURE_TYPE_P))
         v->respic = get_bits(gb, 2);
 
     if (v->res_x8 && (v->s.pict_type == AV_PICTURE_TYPE_I || v->s.pict_type == AV_PICTURE_TYPE_BI)) {
