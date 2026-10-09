@@ -18,10 +18,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "config_components.h"
+
 #include "libavutil/imgutils.h"
 
 #include "codec_internal.h"
 #include "flvdec.h"
+#include "hwconfig.h"
 #include "h263dec.h"
 #include "mpegvideo.h"
 #include "mpegvideodec.h"
@@ -120,4 +123,10 @@ const FFCodec ff_flv_decoder = {
     .caps_internal  = FF_CODEC_CAP_INIT_CLEANUP |
                       FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
     .p.max_lowres   = 3,
+    .hw_configs     = (const AVCodecHWConfigInternal *const []) {
+#if CONFIG_FLV_V4L2REQUEST_HWACCEL
+                          HWACCEL_V4L2REQUEST(flv),
+#endif
+                          NULL
+                      },
 };
