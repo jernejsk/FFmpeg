@@ -501,6 +501,12 @@ int ff_h263_decode_frame(AVCodecContext *avctx, AVFrame *pict,
         return ret;
     }
 
+#if CONFIG_MPEG4_DECODER
+    /* before h263_get_format(): hwaccels check the workarounds in init() */
+    if (avctx->codec_id == AV_CODEC_ID_MPEG4)
+        ff_mpeg4_workaround_bugs(avctx);
+#endif
+
     if (!h->c.context_initialized) {
         avctx->pix_fmt = h263_get_format(avctx);
         if ((ret = ff_mpv_common_init(s)) < 0)
@@ -513,7 +519,6 @@ int ff_h263_decode_frame(AVCodecContext *avctx, AVFrame *pict,
     if (avctx->codec_id == AV_CODEC_ID_MPEG4) {
         if (h->c.pict_type != AV_PICTURE_TYPE_B && h->c.mb_num/2 > get_bits_left(&h->gb))
             return AVERROR_INVALIDDATA;
-        ff_mpeg4_workaround_bugs(avctx);
         if (h->c.studio_profile != (h->c.idsp.idct == NULL))
             ff_mpv_idct_init(s);
     }
