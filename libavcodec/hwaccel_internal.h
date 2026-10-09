@@ -30,6 +30,13 @@
 
 #define HWACCEL_CAP_ASYNC_SAFE      (1 << 0)
 #define HWACCEL_CAP_THREAD_SAFE     (1 << 1)
+/**
+ * The hwaccel cannot continue across H.263 GOB headers or MPEG-4 video packet
+ * headers: the H.263/MPEG-4 decoders locate them and call decode_slice() once
+ * per segment of the picture that starts with such a header, with the header
+ * parsed into the decoder context (mb_x, mb_y, qscale).
+ */
+#define HWACCEL_CAP_RESYNC_SLICES   (1 << 2)
 
 typedef struct FFHWAccel {
     /**

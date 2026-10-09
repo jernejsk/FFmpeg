@@ -96,6 +96,7 @@ typedef struct H263DecContext {
 #define SLICE_NOEND     -3 ///<no end marker or error found but mb count exceeded
 
     GetBitContext last_resync_gb;    ///< used to search for the next resync marker
+    int resync_pos;                  ///< bit position of the last GOB or video packet header found for a hwaccel
 
     uint8_t permutated_intra_h_scantable[64];
     uint8_t permutated_intra_v_scantable[64];

@@ -217,8 +217,10 @@ static int decode_slice(H263DecContext *const h)
         const uint8_t *start = h->gb.buffer + get_bits_count(&h->gb) / 8;
         ret = FF_HW_CALL(h->c.avctx, decode_slice, start,
                          get_bits_bytesize(&h->gb, 0) - get_bits_count(&h->gb) / 8);
-        // ensure we exit decode loop
-        h->c.mb_y = h->c.mb_height;
+        // ensure we exit decode loop, unless the hwaccel wants the segments
+        if (!(ffhwaccel(h->c.avctx->hwaccel)->caps_internal &
+              HWACCEL_CAP_RESYNC_SLICES))
+            h->c.mb_y = h->c.mb_height;
         return ret;
     }
 
@@ -595,7 +597,11 @@ int ff_h263_decode_frame(AVCodecContext *avctx, AVFrame *pict,
             int prev_x = h->c.mb_x, prev_y = h->c.mb_y;
             if (ff_h263_resync(h) < 0)
                 break;
-            if (prev_y * h->c.mb_width + prev_x < h->c.mb_y * h->c.mb_width + h->c.mb_x)
+            if (avctx->hwaccel) {
+                /* Only reached with HWACCEL_CAP_RESYNC_SLICES. */
+                if (prev_y * h->c.mb_width + prev_x >= h->c.mb_y * h->c.mb_width + h->c.mb_x)
+                    break;
+            } else if (prev_y * h->c.mb_width + prev_x < h->c.mb_y * h->c.mb_width + h->c.mb_x)
                 h->c.er.error_occurred = 1;
         }
 
