@@ -62,6 +62,10 @@ static const enum AVPixelFormat h263_hwaccel_pixfmt_list_420[] = {
 #if CONFIG_H263_VIDEOTOOLBOX_HWACCEL || CONFIG_MPEG4_VIDEOTOOLBOX_HWACCEL
     AV_PIX_FMT_VIDEOTOOLBOX,
 #endif
+#if CONFIG_H263_V4L2REQUEST_HWACCEL || CONFIG_MPEG4_V4L2REQUEST_HWACCEL || \
+    CONFIG_FLV_V4L2REQUEST_HWACCEL
+    AV_PIX_FMT_DRM_PRIME,
+#endif
     AV_PIX_FMT_YUV420P,
     AV_PIX_FMT_NONE
 };
@@ -82,7 +86,8 @@ static enum AVPixelFormat h263_get_format(AVCodecContext *avctx)
 
     if (avctx->codec_id == AV_CODEC_ID_H263  ||
         avctx->codec_id == AV_CODEC_ID_H263P ||
-        avctx->codec_id == AV_CODEC_ID_MPEG4)
+        avctx->codec_id == AV_CODEC_ID_MPEG4 ||
+        avctx->codec_id == AV_CODEC_ID_FLV1)
         return avctx->pix_fmt = ff_get_format(avctx, h263_hwaccel_pixfmt_list_420);
 
     return AV_PIX_FMT_YUV420P;
@@ -684,6 +689,9 @@ static const AVCodecHWConfigInternal *const h263_hw_config_list[] = {
 #endif
 #if CONFIG_H263_VIDEOTOOLBOX_HWACCEL
     HWACCEL_VIDEOTOOLBOX(h263),
+#endif
+#if CONFIG_H263_V4L2REQUEST_HWACCEL
+    HWACCEL_V4L2REQUEST(h263),
 #endif
     NULL
 };
