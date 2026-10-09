@@ -211,12 +211,79 @@ static int h263_decode_gob_header(H263DecContext *const h)
 }
 
 /**
+ * Find the next GOB or video packet header after the start of the current
+ * segment for a hwaccel, which does not decode the macroblocks in between.
+ * H.263 GOB start codes need not be byte aligned, unlike MPEG-4 resync
+ * markers, so they are searched at bit granularity.
+ */
+static int h263_resync_hwaccel(H263DecContext *const h)
+{
+    const int mpeg4 = h->c.codec_id == AV_CODEC_ID_MPEG4;
+    const uint8_t *buf = h->gb.buffer;
+    const int size = get_bits_bytesize(&h->gb, 0);
+    int start, ret;
+
+#if CONFIG_MPEG4_DECODER
+    /* Without resync markers, the macroblock data may emulate one. */
+    if (mpeg4 && !((const Mpeg4DecContext *)h)->resync_marker)
+        return -1;
+#endif
+
+    h->gb = h->last_resync_gb;
+    if (mpeg4)
+        align_get_bits(&h->gb);
+    start = get_bits_count(&h->gb);
+
+    for (int pos = start >> 3; pos + 3 < size; pos++) {
+        /* 16 zero bits starting in byte pos cover all of byte pos + 1. */
+        if (buf[pos + 1])
+            continue;
+
+        /*
+         * A start code ends the VOP: resync markers never emulate one. Stop
+         * there, like the macroblock decoding would, for packed B-frames.
+         */
+        if (mpeg4 && !buf[pos] && buf[pos + 2] == 1 && pos * 8 >= start) {
+            skip_bits_long(&h->gb, pos * 8 - get_bits_count(&h->gb));
+            return -1;
+        }
+
+        for (int bit = pos * 8; bit < pos * 8 + (mpeg4 ? 1 : 8); bit++) {
+            GetBitContext bak;
+
+            if (bit < start)
+                continue;
+            skip_bits_long(&h->gb, bit - get_bits_count(&h->gb));
+            if (show_bits(&h->gb, 16) ||
+                (!mpeg4 && !(show_bits(&h->gb, 17) & 1)))
+                continue;
+
+            bak = h->gb;
+#if CONFIG_MPEG4_DECODER
+            if (mpeg4)
+                ret = ff_mpeg4_decode_video_packet_header(h);
+            else
+#endif
+                ret = h263_decode_gob_header(h);
+            if (ret >= 0)
+                return h->resync_pos = bit;
+            h->gb = bak;
+        }
+    }
+
+    return -1;
+}
+
+/**
  * Decode the group of blocks / video packet header / slice header (MPEG-4 Studio).
  * @return bit position of the resync_marker, or <0 if none was found
  */
 int ff_h263_resync(H263DecContext *const h)
 {
     int left, pos, ret;
+
+    if (h->c.avctx->hwaccel && !h->c.studio_profile)
+        return h263_resync_hwaccel(h);
 
     /* In MPEG-4 studio mode look for a new slice startcode
      * and decode slice header */
