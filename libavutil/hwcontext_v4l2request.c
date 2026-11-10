@@ -430,29 +430,6 @@ static int v4l2request_probe_video_device(AVHWFramesContext *hwfc,
         goto fail;
     }
 
-    // Query OUTPUT buffer capabilities
-    buffers = (struct v4l2_create_buffers) {
-        .count = 0,
-        .memory = V4L2_MEMORY_MMAP,
-        .format.type = fctxi->output.format.type,
-    };
-    if (ioctl(fctxi->video_fd, VIDIOC_CREATE_BUFS, &buffers) < 0) {
-        ret = AVERROR(errno);
-        av_log(hwfc, AV_LOG_ERROR,
-               "Failed to query OUTPUT buffer capabilities of %s: %s (%d)\n",
-               path, strerror(errno), errno);
-        goto fail;
-    }
-    fctxi->output.capabilities = buffers.capabilities;
-
-    // Ensure requests can be used
-    if ((buffers.capabilities & V4L2_BUF_CAP_SUPPORTS_REQUESTS) !=
-        V4L2_BUF_CAP_SUPPORTS_REQUESTS) {
-        ret = AVERROR(EINVAL);
-        av_log(hwfc, AV_LOG_VERBOSE, "Device %s is missing support for requests\n", path);
-        goto fail;
-    }
-
     // Ensure the codec pixelformat can be used
     ret = v4l2request_try_format(hwfc, fctxi->output.format.type, pixelformat);
     if (ret < 0) {
@@ -484,6 +461,33 @@ static int v4l2request_probe_video_device(AVHWFramesContext *hwfc,
         ret = AVERROR(errno);
         av_log(hwfc, AV_LOG_ERROR, "Failed to get OUTPUT format: %s (%d)\n",
                strerror(errno), errno);
+        goto fail;
+    }
+
+    /*
+     * Query OUTPUT buffer capabilities. This is done with the codec
+     * pixelformat set, as a driver may signal a capability depending on it,
+     * e.g. holding CAPTURE buffers only for slice based codecs.
+     */
+    buffers = (struct v4l2_create_buffers) {
+        .count = 0,
+        .memory = V4L2_MEMORY_MMAP,
+        .format.type = fctxi->output.format.type,
+    };
+    if (ioctl(fctxi->video_fd, VIDIOC_CREATE_BUFS, &buffers) < 0) {
+        ret = AVERROR(errno);
+        av_log(hwfc, AV_LOG_ERROR,
+               "Failed to query OUTPUT buffer capabilities of %s: %s (%d)\n",
+               path, strerror(errno), errno);
+        goto fail;
+    }
+    fctxi->output.capabilities = buffers.capabilities;
+
+    // Ensure requests can be used
+    if ((buffers.capabilities & V4L2_BUF_CAP_SUPPORTS_REQUESTS) !=
+        V4L2_BUF_CAP_SUPPORTS_REQUESTS) {
+        ret = AVERROR(EINVAL);
+        av_log(hwfc, AV_LOG_VERBOSE, "Device %s is missing support for requests\n", path);
         goto fail;
     }
 
